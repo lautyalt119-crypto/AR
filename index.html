@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b4ea2">
+  <title>Guardian AR 🇦🇷</title>
+  <link rel="icon" href="logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.png" alt="Guardian AR" class="logo" onerror="this.style.display='none'">
+      <div>
+        <h1>Guardian AR</h1>
+        <p>Protección digital responsable 🇦🇷</p>
+      </div>
+    </div>
+    <span class="status"><span></span> SISTEMA ACTIVO</span>
+  </header>
+
+  <nav class="nav">
+    <button class="nav-btn active" data-section="inicio">Inicio</button>
+    <button class="nav-btn" data-section="analizar">🔎 Analizar</button>
+    <button class="nav-btn" data-section="informes">📁 Mis informes</button>
+    <button class="nav-btn" data-section="biblioteca">🌎 Biblioteca</button>
+    <button class="nav-btn" data-section="investigar">🔍 Investigar</button>
+    <button class="nav-btn" data-section="comunidad">🎮 Comunidad</button>
+    <button class="nav-btn" data-section="operador">🛡️ Operador</button>
+  </nav>
+
+  <main>
+    <section id="inicio" class="section active">
+      <div class="hero card">
+        <div>
+          <span class="eyebrow">GUARDIAN AR</span>
+          <h2>Tecnología al servicio de la protección digital.</h2>
+          <p>Herramienta educativa y de análisis de indicadores públicos. No determina culpabilidad: organiza señales para facilitar una revisión humana responsable.</p>
+          <button class="primary" data-go="analizar">🔎 Comenzar análisis</button>
+        </div>
+        <div class="hero-shield">🇦🇷<br>🛡️</div>
+      </div>
+
+      <div class="grid three">
+        <div class="stat card"><b id="statReports">0</b><span>Informes locales</span></div>
+        <div class="stat card"><b id="statHigh">0</b><span>Prioridad alta</span></div>
+        <div class="stat card"><b id="statCases">0</b><span>Casos guardados</span></div>
+      </div>
+
+      <div class="card notice">
+        <h3>⚠️ Uso responsable</h3>
+        <p>Guardian AR trabaja con datos de prueba y señales técnicas no sensibles. No descarga, almacena ni muestra material ilegal. Una puntuación es un indicador técnico, nunca una acusación.</p>
+      </div>
+    </section>
+
+    <section id="analizar" class="section">
+      <div class="card">
+        <div class="section-title">
+          <div><span class="eyebrow">MÓDULO 01</span><h2>🔎 Analizador de dominio</h2></div>
+          <span class="pill">DATOS SIMULADOS</span>
+        </div>
+        <p class="muted">Para esta versión, los indicadores se generan de forma simulada para probar el sistema sin visitar contenido sensible.</p>
+
+        <div class="form-row">
+          <input id="domainInput" type="text" placeholder="ejemplo.test" autocomplete="off">
+          <button class="primary" id="analyzeBtn">Analizar</button>
+        </div>
+
+        <div id="analysisResult" class="result empty">Esperando un análisis...</div>
+      </div>
+    </section>
+
+    <section id="informes" class="section">
+      <div class="card">
+        <div class="section-title">
+          <div><span class="eyebrow">ARCHIVO LOCAL</span><h2>📁 Mis informes</h2></div>
+          <div>
+            <button class="secondary" id="exportJsonBtn">Exportar datos</button>
+            <button class="danger" id="clearReportsBtn">Borrar todo</button>
+          </div>
+        </div>
+        <p class="muted">Los informes se guardan en este dispositivo mediante almacenamiento local del navegador.</p>
+        <div id="reportsList"></div>
+      </div>
+    </section>
+
+    <section id="biblioteca" class="section">
+      <div class="card">
+        <div class="section-title">
+          <div><span class="eyebrow">ARCHIVO COMUNITARIO</span><h2>🌎 Biblioteca</h2></div>
+          <button class="secondary" id="importJsonBtn">Importar informe</button>
+          <input id="importFile" type="file" accept=".json" hidden>
+        </div>
+        <p class="muted">Esta versión funciona sin servidor. Podés compartir informes técnicos mediante archivos JSON. La publicación pública real requerirá un backend y moderación.</p>
+        <div id="libraryList"></div>
+      </div>
+    </section>
+
+    <section id="investigar" class="section">
+      <div class="card">
+        <span class="eyebrow">OSINT RESPONSABLE</span>
+        <h2>🔍 Investigar un tema</h2>
+        <p class="muted">Buscá información pública y legal. Guardian AR no rastrea ni descarga automáticamente contenido sensible.</p>
+        <div class="form-row">
+          <input id="topicInput" type="text" placeholder="Ej.: seguridad digital infantil" autocomplete="off">
+          <button class="primary" id="searchBtn">Buscar fuentes</button>
+        </div>
+        <div id="searchResult" class="result empty">Ingresá un tema para generar búsquedas en fuentes públicas.</div>
+      </div>
+    </section>
+
+    <section id="comunidad" class="section">
+      <div class="card">
+        <span class="eyebrow">APRENDER + PROTEGER</span>
+        <h2>🎮 Comunidad</h2>
+        <p class="muted">Mini desafíos para aprender seguridad digital de forma entretenida.</p>
+        <div id="quizBox"></div>
+      </div>
+    </section>
+
+    <section id="operador" class="section">
+      <div class="card">
+        <span class="eyebrow">SIMULACIÓN INSTITUCIONAL</span>
+        <h2>🛡️ Modo Operador</h2>
+        <p class="muted">Demo educativa. Un sistema real debería verificar identidad mediante una institución autorizada; nunca alcanza con una contraseña compartida.</p>
+        <div id="operatorLogin">
+          <div class="form-grid">
+            <input id="operatorUser" placeholder="Usuario de prueba">
+            <input id="operatorPass" type="password" placeholder="Clave de prueba">
+          </div>
+          <button class="primary" id="operatorLoginBtn">Ingresar a la simulación</button>
+          <p class="tiny">Demo: usuario <b>operador</b> / clave <b>guardian</b></p>
+        </div>
+        <div id="operatorPanel" class="hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <b>Guardian AR 🇦🇷</b> · Proyecto de ciberseguridad responsable · V2
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
