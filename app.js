@@ -1,5 +1,11 @@
 const STORAGE_KEY = "guardianAR_reports_v2";
 
+// Configuración: para usar la verificación REAL, desplegá worker.js y colocá su URL aquí.
+// Ejemplo: window.GUARDIAN_API_URL = "https://guardian-ar-api.tudominio.workers.dev";
+window.GUARDIAN_API_URL = "";
+
+
+
 const $ = (id) => document.getElementById(id);
 
 function getReports(){
@@ -292,59 +298,111 @@ function searchTopic(){
 $("searchBtn").addEventListener("click",searchTopic);
 $("topicInput").addEventListener("keydown",e=>{if(e.key==="Enter")searchTopic();});
 
-const quiz=[
- {q:"Una persona desconocida te pide una contraseña por mensaje. ¿Qué hacés?",a:["Se la doy si parece confiable","No la comparto y bloqueo/reporto si corresponde","Le paso una contraseña vieja"],ok:1},
- {q:"Encontrás una noticia que parece increíble. ¿Qué conviene hacer?",a:["Compartirla inmediatamente","Verificarla en varias fuentes confiables","Editar el título y compartirla"],ok:1},
- {q:"¿Qué significa que una herramienta de riesgo marque un sitio en rojo?",a:["Que automáticamente es culpable","Que hay indicadores que requieren revisión","Que hay que atacarlo"],ok:1}
-];
-let quizIndex=0, quizScore=0;
-function renderQuiz(){
-  if(quizIndex>=quiz.length){
-    $("quizBox").innerHTML=`<h3>🏆 Desafío terminado</h3><p>Resultado: <b>${quizScore}/${quiz.length}</b></p><button class="primary" onclick="restartQuiz()">Jugar de nuevo</button>`;
+
+async function realCheck(){
+  const raw=$("realUrlInput").value.trim();
+  if(!raw){alert("Ingresá una URL completa.");return;}
+  let url;
+  try{
+    url=new URL(raw);
+    if(!["http:","https:"].includes(url.protocol)) throw new Error();
+  }catch(e){
+    alert("URL no válida. Usá http:// o https://");
     return;
   }
-  const item=quiz[quizIndex];
-  $("quizBox").innerHTML=`
-    <div class="pill">Pregunta ${quizIndex+1}/${quiz.length}</div>
-    <div class="quiz-question">${item.q}</div>
-    ${item.a.map((x,i)=>`<button class="quiz-option" onclick="answerQuiz(${i})">${escapeHTML(x)}</button>`).join("")}
-  `;
+
+  const box=$("realCheckResult");
+  if(!window.GUARDIAN_API_URL){
+    box.className="result";
+    box.innerHTML=`<b>Endpoint no configurado.</b><p class="muted">La parte real usa un backend seguro para no exponer claves de API en GitHub Pages. La app no envía el contenido de la página: solo la URL para una comprobación de reputación.</p>`;
+    return;
+  }
+
+  box.className="result";
+  box.innerHTML="⏳ Verificando reputación...";
+  try{
+    const response=await fetch(window.GUARDIAN_API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({url:url.href})
+    });
+    const data=await response.json();
+    if(!response.ok) throw new Error(data.error||"Error del servidor");
+
+    const safe=data.safe===true;
+    box.innerHTML=`
+      <div class="risk-head">
+        <div><div class="eyebrow">REPUTACIÓN</div>
+        <div class="risk-label ${safe?"low":"high"}">${safe?"SIN COINCIDENCIA DE AMENAZA":"COINCIDENCIA DE AMENAZA"}</div></div>
+        <div class="risk-score ${safe?"low":"high"}">${safe?"OK":"!"}</div>
+      </div>
+      <p><b>${escapeHTML(data.message||"Resultado recibido.")}</b></p>
+      <p class="tiny">Fuente: Google Safe Browsing. Esto no demuestra que una página sea legal o ilegal; solo indica si coincide con categorías de amenazas conocidas.</p>
+    `;
+  }catch(e){
+    box.innerHTML=`<b>No se pudo completar la verificación.</b><p class="muted">${escapeHTML(e.message)}</p>`;
+  }
 }
-window.answerQuiz=(i)=>{
-  if(i===quiz[quizIndex].ok)quizScore++;
-  quizIndex++; renderQuiz();
+$("realCheckBtn").addEventListener("click",realCheck);
+$("realUrlInput").addEventListener("keydown",e=>{if(e.key==="Enter")realCheck();});
+
+const football={
+  round:0, goals:0, saves:0, finished:false,
+  directions:["IZQUIERDA","CENTRO","DERECHA"],
+  current:null
 };
-window.restartQuiz=()=>{quizIndex=0;quizScore=0;renderQuiz();};
 
-$("operatorLoginBtn").addEventListener("click",()=>{
-  if($("operatorUser").value==="operador" && $("operatorPass").value==="guardian"){
-    $("operatorLogin").classList.add("hidden");
-    $("operatorPanel").classList.remove("hidden");
-    renderOperator();
-  }else alert("Credenciales de DEMO incorrectas.");
-});
-function renderOperator(){
-  const reports=getReports();
-  const high=reports.filter(r=>r.score>=60);
-  $("operatorPanel").innerHTML=`
+function renderFootball(){
+  if(football.finished){
+    const win=football.goals>football.saves;
+    $("footballGame").innerHTML=`
+      <div class="result">
+        <h3>${win?"🏆 ¡GANASTE LA COPA!":"🥲 Final del partido"}</h3>
+        <p>Resultado: <b>${football.goals} - ${football.saves}</b></p>
+        <button class="primary" onclick="restartFootball()">🔄 Jugar otra vez</button>
+      </div>`;
+    return;
+  }
+  $("footballGame").innerHTML=`
     <div class="grid three">
-      <div class="stat card"><b>${reports.length}</b><span>Casos</span></div>
-      <div class="stat card"><b class="high">${high.length}</b><span>Prioridad alta</span></div>
-      <div class="stat card"><b>${reports.filter(r=>r.score<60).length}</b><span>Revisión</span></div>
+      <div class="stat card"><b>${football.goals}</b><span>Goles</span></div>
+      <div class="stat card"><b>${football.saves}</b><span>Atajadas</span></div>
+      <div class="stat card"><b>${football.round}/5</b><span>Penales</span></div>
     </div>
-    <h3>🔴 Prioridad alta</h3>
-    ${high.length ? high.map(r=>`
-      <div class="report-item">
-        <b>${escapeHTML(r.id)}</b> · ${escapeHTML(r.subject)}
-        <p class="muted">${r.score}/100 · ${formatDate(r.createdAt)}</p>
-        <div class="actions">
-          <button class="secondary" onclick="exportPDF(getReports().find(x=>x.id==='${r.id}'))">📄 Ver informe</button>
-        </div>
-      </div>`).join("") : `<div class="result empty">No hay casos de prioridad alta.</div>`}
-    <p class="tiny">Este panel es una simulación. No representa un acceso policial real ni permite verificar identidad institucional.</p>
+    <div class="result">
+      <h3>⚽ Penal ${football.round+1}</h3>
+      <p>Elegí dónde patear. El arquero también elige al azar.</p>
+      <div class="actions">
+        ${football.directions.map(d=>`<button class="primary" onclick="takePenalty('${d}')">${d==="IZQUIERDA"?"⬅️":d==="DERECHA"?"➡️":"⬆️"} ${d}</button>`).join("")}
+      </div>
+      <p class="tiny">Bonus: después de cada penal aparece una pregunta rápida de seguridad digital.</p>
+    </div>
   `;
 }
 
+window.takePenalty=(direction)=>{
+  if(football.finished)return;
+  const keeper=football.directions[Math.floor(Math.random()*3)];
+  const goal=direction!==keeper;
+  if(goal)football.goals++; else football.saves++;
+  const question=[
+    ["¿Qué hacés con una contraseña que alguien te pide por chat?",["La comparto","No la comparto"],1],
+    ["¿Qué conviene hacer con una noticia dudosa?",["Verificar fuentes","Compartirla rápido"],0],
+    ["¿Un resultado automático demuestra un delito?",["Sí","No, requiere revisión"],1]
+  ][football.round%3];
+
+  const answer=prompt(`${goal?"⚽ ¡GOL!":"🧤 ¡ATAJÓ EL ARQUERO!"}\n\n${question[0]}\n\n0) ${question[1][0]}\n1) ${question[1][1]}`);
+  if(answer!==null && Number(answer)===question[2]){
+    alert("🧠 ¡Buenísima! Sumás un bonus de conocimiento.");
+  }else{
+    alert("📚 Casi. Recordá: Guardian AR ayuda a organizar señales, no reemplaza la revisión humana.");
+  }
+
+  football.round++;
+  if(football.round>=5)football.finished=true;
+  renderFootball();
+};
+window.restartFootball=()=>{football.round=0;football.goals=0;football.saves=0;football.finished=false;renderFootball();};
 function updateStats(){
   const reports=getReports();
   $("statReports").textContent=reports.length;
